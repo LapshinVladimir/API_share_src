@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  etl:
+    restart: always
+    env_file:
+      - .env
+    build: ETL_Service/.
+    container_name: etl_service
+    depends_on:
+      - elasticsearch
+      - postgres
+
+  elasticsearch:
+    image: elasticsearch:${ES_VER}
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms200m -Xmx200m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    container_name: etl_es
+
+    ports:
+      - ${ES_PORT}:${ES_PORT}
+
+  postgres:
+    restart: always
+    env_file:
+      - .env
+    image: 'postgres:${PG_VER}'
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    container_name: etl_pg
+    volumes:
+      - ${DB_VOLUME_CATALOG_PATH}:/var/lib/postgresql/data/
